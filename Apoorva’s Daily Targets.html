@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Apoorva’s Daily Targets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f2f4f8;--card:#ffffff;--ink:#16203a;--mute:#5d6783;--line:#dde2ee;
+  --nid:#2b50ff;--nift:#d6336c;--uceed:#0b9a6d;--mark:#ffd23f;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1426;--card:#18203a;--ink:#eef1fb;--mute:#9aa4c4;--line:#2a3354;
+  --nid:#7d95ff;--nift:#ff7aa8;--uceed:#3fd6a2;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1426;--card:#18203a;--ink:#eef1fb;--mute:#9aa4c4;--line:#2a3354;--nid:#7d95ff;--nift:#ff7aa8;--uceed:#3fd6a2;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45}
+main{max-width:720px;margin:0 auto;padding:28px 16px 60px}
+h1{font-size:clamp(28px,7vw,44px);font-weight:800;margin:0 0 18px;letter-spacing:-.02em}
+.cd{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:22px}
+.cd div{background:var(--card);border:1px solid var(--line);border-top:5px solid var(--c);border-radius:10px;padding:12px 10px;text-align:center}
+.cd b{display:block;font-size:clamp(28px,8vw,40px);font-weight:800;color:var(--c);line-height:1}
+.cd span{display:block;font-size:13px;color:var(--mute);margin-top:6px}
+.cd strong{display:block;font-size:15px;margin-top:2px}
+.prog{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:18px}
+.prog p{margin:0 0 8px;font-size:15px;display:flex;justify-content:space-between}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--uceed);transition:width .3s}
+.day{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:12px;padding:12px 14px}
+.day.today{border:2px solid var(--ink);box-shadow:6px 6px 0 var(--mark)}
+.day.past{opacity:.7}
+.day h2{font-size:17px;margin:0 0 8px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.day h2 small{font-weight:400;color:var(--mute);font-size:14px}
+.tag{font-size:12px;background:var(--mark);color:#16203a;border-radius:5px;padding:1px 7px;margin-left:8px;font-weight:600}
+label{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line);cursor:pointer;font-size:15px}
+label:first-of-type{border-top:0}
+input{width:22px;height:22px;margin:0;flex:none;accent-color:var(--c);cursor:pointer}
+label span{flex:1}
+label.done span{text-decoration:line-through;color:var(--mute)}
+label em{font-style:normal;color:var(--c);font-weight:600}
+button{font:inherit;background:none;border:1px solid var(--line);color:var(--mute);border-radius:8px;padding:8px 12px;cursor:pointer}
+.confirm{margin-top:8px;width:100%;background:var(--ink);color:var(--bg);border:0;font-weight:600}
+.pop{position:fixed;inset:0;background:rgba(10,14,30,.6);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}
+.pop[hidden]{display:none}
+.box{background:var(--card);border:2px solid var(--ink);box-shadow:8px 8px 0 var(--mark);border-radius:14px;padding:26px 22px;max-width:360px;text-align:center}
+.box p{font-size:clamp(22px,6vw,28px);font-weight:800;margin:0 0 18px;line-height:1.2}
+.box button{background:var(--ink);color:var(--bg);border:0;font-weight:600;padding:10px 26px}
+:focus-visible{outline:3px solid var(--nid);outline-offset:2px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Apoorva’s Daily Targets</h1>
+  <section class="cd" id="cd" aria-label="Exam countdowns"></section>
+  <section class="prog">
+    <p><span>Overall progress</span><span id="pt"></span></p>
+    <div class="bar"><i id="pb"></i></div>
+  </section>
+  <section id="days"></section>
+  <button id="reset" type="button">Clear all ticks</button>
+</main>
+<script>
+var EXAMS=[{n:"NID",d:new Date(2026,11,20),c:"var(--nid)"},{n:"NIFT",d:new Date(2027,0,10),c:"var(--nift)"},{n:"UCEED",d:new Date(2027,0,17),c:"var(--uceed)"}];
+var START=new Date(2026,10,24),DAYS=20,KEY="apoorva-targets-v1",state={},MK=[];
+function addM(k,lab,list){list.forEach(function(a){var i=diff(new Date(a[0],a[1],a[2]),START);(MK[i]=MK[i]||[]).push([k,lab,"Full-length test"])})}
+addM("nid","NID mock",[[2026,10,26],[2026,10,30],[2026,11,3],[2026,11,5],[2026,11,11],[2026,11,15],[2026,11,19]]);
+addM("nift","NIFT mock",[[2026,11,24],[2026,11,25],[2026,11,27],[2026,11,29],[2026,11,31],[2027,0,2],[2027,0,3],[2027,0,5],[2027,0,7],[2027,0,8]]);
+addM("uceed","UCEED mock",[[2026,10,24],[2026,10,27],[2026,11,1],[2026,11,4],[2026,11,8],[2026,11,12],[2026,11,16],[2026,11,17],[2026,11,23],[2026,11,26],[2026,11,29],[2027,0,1],[2027,0,4],[2027,0,11],[2027,0,13],[2027,0,14],[2027,0,15]]);
+try{state=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){state={}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+function midnight(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate())}
+function diff(a,b){return Math.round((midnight(a)-midnight(b))/864e5)}
+function tasks(i){var t=daily(i);(MK[i]||[]).forEach(function(m){t.push(m)});return t}
+function daily(i){
+  if(i>=DAYS)return [];
+  var t=[["nid","NID Part B","Solve PYQs"]];
+  if(i%2===0)t.push(["nid","NID Part A","Solve PYQs"]);
+  if(i%2===1)t.push(["nift","NIFT Part B","Practice"]);
+  t.push(["nift","NIFT Part A","Solve 10 questions"]);
+  if(i%3===0)t.push(["uceed","UCEED Part B","Practice"]);
+  t.push(["uceed","UCEED Part A","Solve 25 questions"]);
+  t.push(["nid","Part B lecture","Complete 1 lecture"]);
+  return t;
+}
+var CLR={nid:"var(--nid)",nift:"var(--nift)",uceed:"var(--uceed)"};
+var fmt={weekday:"short",day:"numeric",month:"short"};
+function render(){
+  var now=new Date(),cd=document.getElementById("cd");
+  cd.innerHTML=EXAMS.map(function(e){
+    var n=diff(e.d,now);
+    return '<div style="--c:'+e.c+'"><strong>'+e.n+'</strong><b>'+(n>=0?n:0)+'</b><span>'+(n===0?"exam day":n<0?"done":"days to go")+'</span></div>';
+  }).join("");
+  var total=0,done=0,html="",todayIdx=diff(now,START);
+  for(var i=0;i<MK.length;i++){
+    var ts=tasks(i);if(!ts.length)continue;
+    var d=new Date(2026,10,24+i),cnt=0;
+    var rows=ts.map(function(t,j){
+      var id=i+"-"+j,ck=!!state[id];total++;if(ck){done++;cnt++}
+      return '<label class="'+(ck?"done":"")+'" style="--c:'+CLR[t[0]]+'"><input type="checkbox" data-id="'+id+'"'+(ck?" checked":"")+'><span><em>'+t[1]+':</em> '+t[2]+'</span></label>';
+    }).join("");
+    var cls="day"+(i===todayIdx?" today":i<todayIdx?" past":"");
+    html+='<article class="'+cls+'" id="day'+i+'"><h2><span>'+(i<DAYS?'Day '+(i+1)+' · ':'')+d.toLocaleDateString("en-GB",fmt)+(i===todayIdx?'<span class="tag">Today</span>':'')+'</span><small>'+cnt+'/'+ts.length+'</small></h2>'+rows+'<button type="button" class="confirm" data-day="'+i+'">'+(state["c"+i]?"Day confirmed ✓ (tap to confirm again)":"Confirm day")+'</button></article>';
+  }
+  document.getElementById("days").innerHTML=html;
+  document.getElementById("pt").textContent=done+" of "+total+" tasks";
+  document.getElementById("pb").style.width=(total?done/total*100:0)+"%";
+}
+document.getElementById("days").addEventListener("change",function(e){
+  var id=e.target.getAttribute("data-id");if(!id)return;
+  if(e.target.checked)state[id]=1;else delete state[id];
+  save();var y=window.scrollY;render();window.scrollTo(0,y);
+  var el=document.querySelector('[data-id="'+id+'"]');if(el)el.focus({preventScroll:true});
+});
+document.getElementById("reset").addEventListener("click",function(){
+  if(confirm("Clear every tick?")){state={};save();render()}
+});
+var dlg=document.createElement("div");dlg.className="pop";dlg.hidden=true;
+dlg.innerHTML='<div class="box" role="dialog" aria-modal="true" aria-live="assertive"><p id="popmsg"></p><button type="button" id="popok">OK</button></div>';
+document.body.appendChild(dlg);
+function popup(m){document.getElementById("popmsg").textContent=m;dlg.hidden=false;document.getElementById("popok").focus()}
+document.getElementById("popok").addEventListener("click",function(){dlg.hidden=true});
+dlg.addEventListener("click",function(e){if(e.target===dlg)dlg.hidden=true});
+document.getElementById("days").addEventListener("click",function(e){
+  var b=e.target.closest(".confirm");if(!b)return;
+  var i=+b.getAttribute("data-day"),ts=tasks(i),missed=0;
+  ts.forEach(function(t,j){if(!state[i+"-"+j])missed++});
+  state["c"+i]=1;save();var y=window.scrollY;render();window.scrollTo(0,y);
+  popup(missed===0?"GOOD GIRL.. MUAAAAHHHHHHH 💖":missed<=2?"good but will improve it llamaa":"Not your best day, but tomorrow is a fresh start. Let’s go!");
+});
+render();
+var t=document.querySelector(".day.today");if(t)t.scrollIntoView({block:"start"});
+</script>
+</body>
+</html>
